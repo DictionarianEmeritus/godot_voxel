@@ -470,8 +470,35 @@ void generate_mesh(
 						arrays.normals.push_back(normals[i]);
 						arrays.uvs.push_back(uvs[i]);
 						arrays.positions.push_back(positions[i] + pos);
+
+                        Color c{1.0, 1.0, 1.0};
+                        if (lightingEnabled) {
+                            Vector3f side_normal = normals[i];
+                            Vector3f vertex_pos = positions[i];
+
+                            // pos - position of voxel
+                            // vertex_pos - position of vertex (0 to 1)
+                            // side_normal - normal vector
+                            RGBLight l;
+                            if (lightCompressedData == 1) {
+                                l = RGBLight{255, 255, 255};
+                            } else if (lightCompressedData == -1) {
+                                l = RGBLight{0, 0, 0};
+                            } else {
+                                if (_smooth_lighting) {
+                                    l = sample_lighting(pos, vertex_pos, side_normal, lightData, lightMinimum, _shadow_sampling_trick, _shadow_sampling_trick_penalty);
+                                } else {
+                                    l = sample_lighting_flat(pos, vertex_pos, side_normal, lightData, lightMinimum, _shadow_sampling_trick, _shadow_sampling_trick_penalty);
+                                }
+                            }
+                            c = Color(float(l.r) / 255., float(l.g) / 255., float(l.b) / 255.);
+                        } else {
+                            c = Color(1.0, 1.0, 1.0);
+                        }
+                        c *= modulate_color;
+
 						// TODO handle ambient occlusion on inner parts
-						arrays.colors.push_back(modulate_color);
+						arrays.colors.push_back(c);
 					}
 
 					const StdVector<int> &indices = surface.indices;
